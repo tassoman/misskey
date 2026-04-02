@@ -194,6 +194,8 @@ export class EmailService {
 		if (this.meta.enableActiveEmailValidation) {
 			if (this.meta.enableVerifymailApi && this.meta.verifymailAuthKey != null) {
 				validated = await this.verifyMail(emailAddress, this.meta.verifymailAuthKey);
+			} else if (this.meta.enableUsercheckApi && this.meta.usercheckApiKey != null) {
+		validated = await this.userCheck(emailAddress, this.meta.usercheckApiKey);
 			} else if (this.meta.enableTruemailApi && this.meta.truemailInstance && this.meta.truemailAuthKey != null) {
 				validated = await this.trueMail(this.meta.truemailInstance, emailAddress, this.meta.truemailAuthKey);
 			} else {
@@ -370,6 +372,80 @@ export class EmailService {
 			return {
 				valid: false,
 				reason: 'network',
+			};
+		}
+	}
+
+		private async userCheck(emailAddress: string, usercheckApiKey: string): Promise<{
+		valid: boolean;
+		reason: 'used' | 'format' | 'disposable' | 'mx' | 'smtp' | null;
+	}> {
+		const endpoint = 'https://api.usercheck.com/email';
+		try {
+			const res = await this.httpRequestService.send(endpoint, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${usercheckApiKey}`,
+				},
+				body: JSON.stringify({ email: emailAddress }),
+			});
+
+			const json = (await res.json()) as Partial<{
+				email: string;
+				is_disposable: boolean;
+				is_forwarding: boolean;
+				is_public_provider: boolean;
+				mx_valid: boolean;
+				domain_authority: number;
+				did_you_mean?: string;
+				is_role_account: boolean;
+				error?: string;
+			}>;
+
+			if (json.error) {
+				return {
+					valid: false,
+					reason: null,
+				};
+			}
+
+			if (json.email === undefined) {
+				return {
+					valid: false,
+					reason: 'format',
+				};
+			}
+
+			if (!json.mx_valid) {
+				return {
+					valid: false,
+					reason: 'mx',
+				};
+			}
+
+			if (json.is_disposable) {
+				return {
+					valid: false,
+					reason: 'disposable',
+				};
+			}
+
+			if (json.is_forwarding || json.is_role_account) {
+				return {
+					valid: false,
+					reason: 'smtp',
+				};
+			}
+
+			return {
+				valid: true,
+				reason: null,
+			};
+		} catch (_) {
+			return {
+				valid: false,
+				reason: null,
 			};
 		}
 	}

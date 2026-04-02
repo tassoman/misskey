@@ -116,6 +116,19 @@ SPDX-License-Identifier: AGPL-3.0-only
 									<template #label><SearchLabel>TrueMail API Auth Key</SearchLabel></template>
 								</MkInput>
 							</SearchMarker>
+
+							<SearchMarker>
+								<MkSwitch v-model="emailValidationForm.state.enableUsercheckApi">
+									<template #label><SearchLabel>Use UserCheck API</SearchLabel></template>
+								</MkSwitch>
+							</SearchMarker>
+
+							<SearchMarker>
+								<MkInput v-model="emailValidationForm.state.usercheckApiKey">
+									<template #prefix><i class="ti ti-key"></i></template>
+									<template #label><SearchLabel>UserCheck API Key</SearchLabel></template>
+								</MkInput>
+							</SearchMarker>
 						</div>
 					</MkFolder>
 				</SearchMarker>
@@ -221,12 +234,16 @@ const emailValidationForm = useForm({
 	enableTruemailApi: meta.enableTruemailApi,
 	truemailInstance: meta.truemailInstance,
 	truemailAuthKey: meta.truemailAuthKey,
+	enableUsercheckApi: meta.enableUsercheckApi,
+	usercheckApiKey: meta.usercheckApiKey,
 }, async (state) => {
 	await os.apiWithDialog('admin/update-meta', {
 		enableActiveEmailValidation: state.enableActiveEmailValidation,
 		enableVerifymailApi: state.enableVerifymailApi,
 		verifymailAuthKey: state.verifymailAuthKey,
 		enableTruemailApi: state.enableTruemailApi,
+		enableUsercheckApi: state.enableUsercheckApi,
+		usercheckApiKey: state.usercheckApiKey,
 		truemailInstance: state.truemailInstance,
 		truemailAuthKey: state.truemailAuthKey,
 	});
